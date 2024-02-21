@@ -8,6 +8,7 @@ variable subnet_cidr_block{}
 variable env_prefix{}
 variable my_ip{}
 variable instance_type{}
+variable my_public_key{}
 
 
 
@@ -97,6 +98,10 @@ output "aws_ami_id" {
   value = data.aws_ami.latest-amazon-linux-image
 }
 
+resource "aws_key_pair" "ssh-key" {
+    key_name = "server-key"
+    public_key = var.my_public_key
+}
 resource "aws_instance" "myapp-server"{
 
     ami = data.aws_ami.latest-amazon-linux-image.id
@@ -107,7 +112,9 @@ resource "aws_instance" "myapp-server"{
     availability_zone = var.avail_zone
 
     associate_public_ip_address = true
-    key_name = "k8s-key-pair"
+    key_name = aws_key_pair.ssh-key.key_name
+
+    user_data = file("entry-script.sh")
 
      tags = {
         Name: "${var.env_prefix}-server"
